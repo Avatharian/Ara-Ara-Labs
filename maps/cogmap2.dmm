@@ -1230,7 +1230,7 @@
 "axH" = (/obj/disposalpipe/segment{dir = 4},/turf/simulated/wall/auto/supernorn,/area/station/crew_quarters/kitchen)
 "axI" = (/obj/machinery/disposal,/obj/disposalpipe/trunk{dir = 8},/obj/landmark{icon_state = "x3"; name = "peststart"},/obj/machinery/camera{c_tag = "autotag"; dir = 4; name = "autoname - SS13"; pixel_x = -10; tag = ""},/turf/simulated/floor/specialroom/cafeteria,/area/station/crew_quarters/kitchen)
 "axJ" = (/obj/disposalpipe/segment/mail/vertical,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
-"axK" = (/obj/table/auto,/obj/item/kitchen/rollingpin,/obj/item/reagent_containers/glass/bottle/icing,/obj/item/reagent_containers/glass/bottle/icing,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
+"axK" = (/obj/table/auto,/obj/item/kitchen/rollingpin,/obj/item/reagent_containers/food/drinks/drinkingglass/icing,/obj/item/reagent_containers/food/drinks/drinkingglass/icing,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
 "axL" = (/obj/table/auto,/obj/item/satchel/hydro,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
 "axM" = (/obj/table/auto,/obj/item/plate,/obj/item/plate,/obj/item/plate,/obj/item/plate,/obj/item/reagent_containers/food/drinks/bowl,/obj/item/reagent_containers/food/drinks/bowl,/obj/disposalpipe/segment,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
 "axN" = (/obj/machinery/atmospherics/pipe/simple/color_pipe/cyan_pipe/vertical,/turf/simulated/floor/white,/area/station/crew_quarters/kitchen)
