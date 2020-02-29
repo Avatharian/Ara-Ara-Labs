@@ -3616,6 +3616,21 @@ datum
 						T.dir = pick(cardinal)
 				return
 
+				
+		sakuride
+			name = "sakuride"
+			id = "sakuride"
+			description = "A big pile of sakura petals!"
+			reagent_state = SOLID
+			fluid_r = 255
+			fluid_g = 161
+			fluid_b = 203
+			transparency = 255
+
+			reaction_turf(var/turf/T, var/volume)
+				if (!(istype(T, /turf/space)) && (volume >= 1))
+					if (!locate(/obj/decal/cleanable/sakura) in T)
+						make_cleanable(/obj/decal/cleanable/sakura,T)
 
 /obj/badman/ //I really don't know a good spot to put this guy so im putting him here, fuck you.
 	name = "Senator Death Badman"
