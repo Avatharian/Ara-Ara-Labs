@@ -1,3 +1,9 @@
+avatharian - Host
+alfredochicken - Host
+awkwarddryad - Host
+
+
+
 slurm - Inactive
 gibbed - Inactive
 stuntwaffle - Inactive
@@ -75,7 +81,7 @@ saorangesoda - Inactive
 spacemarine9 - Inactive
 lison - Primary Administrator
 enallyniv - Inactive
-hokie - Primary Administrator
+hokie - Host
 jasmine87 - Inactive
 69andahalf - Primary Administrator
 tinyturtle - Inactive
