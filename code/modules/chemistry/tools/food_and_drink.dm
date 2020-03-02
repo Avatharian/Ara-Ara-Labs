@@ -145,8 +145,8 @@
 	attackby(obj/item/W as obj, mob/user as mob)
 		if (istype(W,/obj/item/kitchen/utensil/fork) || istype(W,/obj/item/kitchen/utensil/spoon))
 			if (prob(20) && (istype(W,/obj/item/kitchen/utensil/fork/plastic) || istype(W,/obj/item/kitchen/utensil/spoon/plastic)))
-				var/obj/item/kitchen/utensil/spoon/plastic/S = W
-				S.break_spoon(user)
+				var/obj/item/kitchen/utensil/S = W
+				S.break_utensil(user)
 				user.visible_message("<span style=\"color:red\">[user] stares glumly at [src].</span>")
 				return
 
@@ -191,7 +191,7 @@
 						// basically, the fork in their left hand will always be chosen
 						// I guess people in space are all left handed
 						for (var/obj/item/kitchen/utensil/fork/plastic/F in user.equipped_list(check_for_magtractor = 0))
-							F.break_fork(M)
+							F.break_utensil(M)
 							M.visible_message("<span style=\"color:red\">[user] stares glumly at [src].</span>")
 							return
 					if (src.needspoon && !user.find_type_in_hand(/obj/item/kitchen/utensil/spoon))
@@ -203,7 +203,7 @@
 						// basically, the fork in their left hand will always be chosen
 						// I guess people in space are all left handed
 						for (var/obj/item/kitchen/utensil/spoon/plastic/S in user.equipped_list(check_for_magtractor = 0))
-							S.break_spoon(M)
+							S.break_utensil(M)
 							M.visible_message("<span style=\"color:red\">[user] stares glumly at [src].</span>")
 							return
 

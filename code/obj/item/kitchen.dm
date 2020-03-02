@@ -46,7 +46,9 @@ TRAYS
 	stamina_damage = 5
 	stamina_cost = 10
 	stamina_crit_chance = 15
+	dir = NORTH
 	var/rotatable = 1 //just in case future utensils are added that dont wanna be rotated
+	var/snapped
 
 	New()
 		if (prob(60))
@@ -59,8 +61,63 @@ TRAYS
 		if (rotatable)
 			set src in oview(1)
 
-			src.dir = turn(src.dir, 90)
+			src.dir = turn(src.dir, -90)
 		return
+
+	attack_self(mob/user as mob)
+		src.rotate()
+
+	proc/break_utensil(mob/living/carbon/user as mob, var/spawnatloc = 0)
+		var/location = get_turf(src)
+		user.visible_message("<span style=\"color:red\">[src] breaks!</span>")
+		playsound(user.loc, "sound/impact_sounds/Generic_Snap_1.ogg", 30, 1)
+		user.u_equip(src)
+		var/replacethis
+		switch(src.type)
+			if(/obj/item/kitchen/utensil/spoon/plastic)
+				replacethis = "spoon_plastic_"
+			if(/obj/item/kitchen/utensil/fork/plastic)
+				replacethis = "fork_plastic_"
+			if(/obj/item/kitchen/utensil/knife/plastic)
+				if(src.snapped)
+					qdel(src)
+					return
+				replacethis = "knife_plastic_"
+		var/utensil_color = replacetext(src.icon_state,replacethis,"")
+		var/obj/item/kitchen/utensil/knife/plastic/k = new /obj/item/kitchen/utensil/knife/plastic
+		k.icon_state = "snapped_[utensil_color]"
+		k.snapped = 1
+		k.name = "snapped [k.name]"
+		if(spawnatloc)
+			k.set_loc(location)
+		else
+			user.put_in_hand_or_drop(k)
+		qdel(src)
+		return
+
+/obj/item/kitchen/utensil/spoon
+	name = "spoon"
+	desc = "A metal object that has a handle and ends in a small concave oval. Used to carry liquid objects from the container to the mouth."
+	icon_state = "spoon"
+
+	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
+		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
+			user.visible_message("<span style='color:red'><b>[user]</b> fumbles [src] and jabs [his_or_her(user)]self.</span>")
+			random_brute_damage(user, 5)
+		if (!spoon_surgery(M,user))
+			return ..()
+
+	custom_suicide = 1
+	suicide(var/mob/user as mob)
+		if (!src.user_can_suicide(user))
+			return 0
+		var/hisher = his_or_her(user)
+		user.visible_message("<span style='color:red'><b>[user] jabs [src] straight through [hisher] eye and into [hisher] brain!</b></span>")
+		blood_slash(user, 25)
+		playsound(user.loc, src.hitsound, 50, 1)
+		user.TakeDamage("head", 150, 0)
+		user.updatehealth()
+		return 1
 
 /obj/item/kitchen/utensil/fork
 	name = "fork"
@@ -88,39 +145,6 @@ TRAYS
 		user.TakeDamage("chest", 150, 0)
 		user.updatehealth()
 		return 1
-
-/obj/item/kitchen/utensil/fork/plastic
-	name = "plastic fork"
-	icon_state = "fork_plastic"
-	desc = "A cheap plastic fork, prone to breaking. Helps with eating some foods."
-	force = 1.0
-	throwforce = 1.0
-
-	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
-		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
-			user.visible_message("<span style=\"color:red\"><b>[user]</b> fumbles [src] and stabs \himself.</span>")
-			random_brute_damage(user, 5)
-		if (prob(20))
-			src.break_fork(user)
-			return
-		if (!saw_surgery(M,user))
-			return ..()
-
-	proc/break_fork(mob/living/carbon/user as mob)
-		user.visible_message("<span style=\"color:red\">[src] breaks!</span>")
-		playsound(user.loc, "sound/effects/snap.ogg", 30, 1)
-		user.u_equip(src)
-		qdel(src)
-		return
-
-	suicide(var/mob/user as mob)
-		user.visible_message("<span style=\"color:red\"><b>[user] tries to stab [src] right into \his heart!</b></span>")
-		src.break_fork(user)
-		SPAWN_DBG(10 SECONDS)
-			if (user)
-				user.suiciding = 0
-		return 1
-
 
 /obj/item/kitchen/utensil/knife
 	name = "knife"
@@ -157,39 +181,129 @@ TRAYS
 		user.updatehealth()
 		return 1
 
+/obj/item/kitchen/utensil/spoon/plastic
+	name = "plastic spoon"
+	icon_state = "spoon_plastic"
+	desc = "A cheap plastic spoon, prone to breaking. Used to carry liquid objects from the container to the mouth."
+	force = 1.0
+	throwforce = 1.0
+
+	New()
+		src.icon_state = pick("spoon_plastic_pink","spoon_plastic_yellow","spoon_plastic_green","spoon_plastic_blue")
+
+	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
+		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
+			user.visible_message("<span style=\"color:red\"><b>[user]</b> fumbles [src] and jabs \himself.</span>")
+			random_brute_damage(user, 5)
+		if (prob(20))
+			src.break_utensil(user)
+			return
+		if (!spoon_surgery(M,user))
+			return ..()
+
+	suicide(var/mob/user as mob)
+		user.visible_message("<span style=\"color:red\"><b>[user] tries to jab [src] straight through \his eye and into \his brain!</b></span>")
+		src.break_utensil(user)
+		spawn(100)
+			if (user)
+				user.suiciding = 0
+		return 1
+
+/obj/item/kitchen/utensil/fork/plastic
+	name = "plastic fork"
+	icon_state = "fork_plastic_pink"
+	desc = "A cheap plastic fork, prone to breaking. Helps with eating some foods."
+	force = 1.0
+	throwforce = 1.0
+
+	New()
+		src.icon_state = pick("fork_plastic_pink","fork_plastic_yellow","fork_plastic_green","fork_plastic_blue")
+
+	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
+		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
+			user.visible_message("<span style=\"color:red\"><b>[user]</b> fumbles [src] and stabs \himself.</span>")
+			random_brute_damage(user, 5)
+		if (prob(20))
+			src.break_utensil(user)
+			return
+		if (!saw_surgery(M,user))
+			return ..()
+
+	suicide(var/mob/user as mob)
+		user.visible_message("<span style=\"color:red\"><b>[user] tries to stab [src] right into \his heart!</b></span>")
+		src.break_utensil(user)
+		spawn(100)
+			if (user)
+				user.suiciding = 0
+		return 1
+
 /obj/item/kitchen/utensil/knife/plastic
-	name = "knife"
+	name = "plastic knife"
 	icon_state = "knife_plastic"
 	force = 1.0
 	throwforce = 1.0
 	desc = "A long bit plastic that is serated on one side, prone to breaking. It is used for cutting foods. Also useful for butchering dead animals, somehow."
+
+	New()
+		src.icon_state = pick("knife_plastic_pink","knife_plastic_yellow","knife_plastic_green","knife_plastic_blue")
 
 	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
 		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
 			user.visible_message("<span style=\"color:red\"><b>[user]</b> fumbles [src] and cuts \himself.</span>")
 			random_brute_damage(user, 5)
 		if (prob(20))
-			src.break_knife(user)
+			src.break_utensil(user)
 			return
 		if (!scalpel_surgery(M,user))
 			return ..()
 
 	suicide(var/mob/user as mob)
 		user.visible_message("<span style=\"color:red\"><b>[user] tries to slash  \his own throat with [src]!</b></span>")
-		src.break_knife(user)
-		SPAWN_DBG(10 SECONDS)
+		src.break_utensil(user)
+		spawn(100)
 			if (user)
 				user.suiciding = 0
 		return 1
-
-	proc/break_knife(mob/living/carbon/user as mob)
-		user.visible_message("<span style=\"color:red\">[src] breaks!</span>")
-		playsound(user.loc, "sound/effects/snap.ogg", 30, 1)
-		user.u_equip(src)
-		qdel(src)
-		return
-
-
+		
+/obj/item/kitchen/plasticpackage //im just gonna...put this here...
+	name = "package of plastic silverware"
+	desc = "These don't look very clean..."
+	icon_state = "plasticpackage"
+	w_class = 1.0
+	var/list/messages = list("AAAAAAAAGH WHY WON'T IT OPEN!", "Oh no...The package...It'S tOo PoWeRfUl!", "Almost open! Wait...Nevermind.", "Almost there.....")
+	
+	attack_self(mob/user as mob)
+		if(prob(25))
+			var/obj/item/kitchen/utensil/fork/plastic/f = new /obj/item/kitchen/utensil/fork/plastic
+			var/obj/item/kitchen/utensil/knife/plastic/k = new /obj/item/kitchen/utensil/knife/plastic
+			var/obj/item/kitchen/utensil/spoon/plastic/s = new /obj/item/kitchen/utensil/spoon/plastic
+			f.icon_state = "fork_plastic_white"
+			k.icon_state = "knife_plastic_white"
+			s.icon_state = "spoon_plastic_white"
+			f.set_loc(get_turf(user))
+			k.set_loc(get_turf(user))
+			s.set_loc(get_turf(user))
+			user.u_equip(src)
+			src.set_loc(user)
+			if(prob(75))
+				user.visible_message("<span style=\"color:red\">The plastic silverware go EVERYWHERE!</span>")
+				var/list/throw_targets = list()
+				for (var/i=1, i<=3, i++)
+					throw_targets += get_offset_target_turf(src.loc, rand(5)-rand(5), rand(5)-rand(5))
+					
+				f.throw_at(pick(throw_targets), 5, 1)
+				if(prob(20))
+					f.break_utensil(user, 1)
+				k.throw_at(pick(throw_targets), 5, 1)
+				if(prob(20))
+					k.break_utensil(user, 1)
+				s.throw_at(pick(throw_targets), 5, 1)
+				if(prob(20))
+					s.break_utensil(user, 1)
+			qdel(src)
+		else
+			user.visible_message("<b>[user]</b> comically struggles to open the [src]","<b>[pick(messages)]</b>")
+	
 /obj/item/kitchen/utensil/knife/cleaver
 	name = "meatcleaver"
 	icon_state = "cleaver"
@@ -261,63 +375,6 @@ TRAYS
 		blood_slash(user, 25)
 		user.TakeDamage("head", 150, 0)
 		user.updatehealth()
-		return 1
-
-/obj/item/kitchen/utensil/spoon
-	name = "spoon"
-	desc = "A metal object that has a handle and ends in a small concave oval. Used to carry liquid objects from the container to the mouth."
-	icon_state = "spoon"
-	dir = NORTH
-
-	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
-		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
-			user.visible_message("<span style='color:red'><b>[user]</b> fumbles [src] and jabs [his_or_her(user)]self.</span>")
-			random_brute_damage(user, 5)
-		if (!spoon_surgery(M,user))
-			return ..()
-
-	custom_suicide = 1
-	suicide(var/mob/user as mob)
-		if (!src.user_can_suicide(user))
-			return 0
-		var/hisher = his_or_her(user)
-		user.visible_message("<span style='color:red'><b>[user] jabs [src] straight through [hisher] eye and into [hisher] brain!</b></span>")
-		blood_slash(user, 25)
-		playsound(user.loc, src.hitsound, 50, 1)
-		user.TakeDamage("head", 150, 0)
-		user.updatehealth()
-		return 1
-
-/obj/item/kitchen/utensil/spoon/plastic
-	name = "plastic spoon"
-	icon_state = "spoon_plastic"
-	desc = "A cheap plastic spoon, prone to breaking. Used to carry liquid objects from the container to the mouth."
-	force = 1.0
-	throwforce = 1.0
-
-	attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
-		if (user && user.bioHolder.HasEffect("clumsy") && prob(50))
-			user.visible_message("<span style=\"color:red\"><b>[user]</b> fumbles [src] and jabs \himself.</span>")
-			random_brute_damage(user, 5)
-		if (prob(20))
-			src.break_spoon(user)
-			return
-		if (!spoon_surgery(M,user))
-			return ..()
-
-	proc/break_spoon(mob/living/carbon/user as mob)
-		user.visible_message("<span style=\"color:red\">[src] breaks!</span>")
-		playsound(user.loc, "sound/effects/snap.ogg", 30, 1)
-		user.u_equip(src)
-		qdel(src)
-		return
-
-	suicide(var/mob/user as mob)
-		user.visible_message("<span style=\"color:red\"><b>[user] tries to jab [src] straight through \his eye and into \his brain!</b></span>")
-		src.break_spoon(user)
-		SPAWN_DBG(10 SECONDS)
-			if (user)
-				user.suiciding = 0
 		return 1
 
 
