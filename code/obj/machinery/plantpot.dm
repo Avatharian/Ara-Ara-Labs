@@ -86,6 +86,8 @@
 	var/health_warning = 0
 	var/harvest_warning = 0
 	var/water_level = 4 // Used for efficiency in the update_icon proc with water level changing
+	var/total_volume = 4 // How much volume total is actually in the tray because why the fuck was water the only reagent being counted towards the level
+	var/image/water_sprite = null
 	var/image/water_display = null
 	var/image/plant_sprite = null
 	var/grow_level = 1 // Same as the above except for current plant growth
@@ -107,7 +109,8 @@
 		R.add_reagent("water", 200)
 		// 200 is the exact maximum amount of water a plantpot can hold before it is considered
 		// to have too much water, which stunts plant growth speed.
-		src.water_display = image('icons/obj/hydroponics/hydroponics.dmi', "wat-[src.water_level]")
+		src.water_sprite = image('icons/obj/hydroponics/hydroponics.dmi', "wat-[src.water_level]")
+		src.water_display = image('icons/obj/hydroponics/hydroponics.dmi', "ind-wat-[src.water_level]")
 		src.plant_sprite = image('icons/obj/hydroponics/hydroponics.dmi', "")
 		update_icon()
 
@@ -135,6 +138,34 @@
 		signal.data["netid"] = net_id
 
 		frequency.post_signal(src, signal)
+
+	on_reagent_change()
+		if (!current) // Make sure we don't have a plant in the tray first
+			var/current_total_volume = (src.reagents ? src.reagents.total_volume : 0)
+			var/current_water_level = (src.reagents ? src.reagents.get_reagent_amount("water") : 0)
+
+			switch(current_total_volume)
+				if (0) current_total_volume = 1
+				if (1 to 40) current_total_volume = 2
+				if (41 to 100) current_total_volume = 3
+				if (101 to 200) current_total_volume = 4
+				if (201 to INFINITY) current_total_volume = 5
+
+			if (current_total_volume != src.total_volume)
+				src.total_volume = current_total_volume
+				do_update_icon = 1
+
+			switch(current_water_level)
+				if (0) current_water_level = 1
+				if (1 to 40) current_water_level = 2
+				if (41 to 100) current_water_level = 3
+				if (101 to 200) current_water_level = 4
+				if (201 to INFINITY) current_water_level = 5
+
+			if (current_water_level != src.water_level)
+				src.water_level = current_water_level
+
+			update_icon()
 
 	process()
 		..()
@@ -166,7 +197,19 @@
 			// simulation whatsoever and just adds one growth point per tick, ignoring all
 			// reagents and everything else going on.
 		else
+			var/current_total_volume = (src.reagents ? src.reagents.total_volume : 0)
 			var/current_water_level = (src.reagents ? src.reagents.get_reagent_amount("water") : 0)
+
+			switch(current_total_volume)
+				if (0) current_total_volume = 1
+				if (1 to 40) current_total_volume = 2
+				if (41 to 100) current_total_volume = 3
+				if (101 to 200) current_total_volume = 4
+				if (201 to INFINITY) current_total_volume = 5
+
+			if (current_total_volume != src.total_volume)
+				src.total_volume = current_total_volume
+				do_update_icon = 1
 
 			switch(current_water_level)
 				if (0) current_water_level = 1
@@ -661,8 +704,16 @@
 	// Procs specific to the plantpot start here.
 
 	proc/update_icon()
-		src.water_display.icon_state = "wat-[src.water_level]"
-		UpdateOverlays(water_display, "water")
+		src.water_sprite.icon_state = "wat-[src.total_volume]"
+		src.water_display.icon_state = "ind-wat-[src.water_level]"
+
+		if (src.reagents.total_volume)
+			var/datum/color/average = src.reagents.get_average_color()
+			src.water_sprite.color = average.to_rgba()
+
+		UpdateOverlays(src.water_display, "water")
+		UpdateOverlays(src.water_sprite, "water_fluid")
+
 		if (!src.current)
 			UpdateOverlays(null, "harvest_display")
 			UpdateOverlays(null, "health_display")
